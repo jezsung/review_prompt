@@ -28,15 +28,29 @@ class ReviewPromptListener extends StatefulWidget {
         assert(child != null),
         super(key: key);
 
+  /// Minimum days since the install date to call [listener].
   final int minDaysSinceInstall;
+
+  /// Minium launch count to call [listener].
   final int minLaunchCount;
+
+  /// App Store ID is required to open store listing on iOS and MacOS.
   final String appStoreId;
+
+  /// Microsoft ID is required to open store listing on Windows.
   final String microsoftStoreId;
+
+  /// [listener] will be called when the app start if conditions are met.
+  /// [listener] never gets called more than once.
   final ReviewPromptWidgetListener listener;
   final Widget child;
 
   static _ReviewPromptListenerState of(BuildContext context) =>
       context.findAncestorStateOfType<_ReviewPromptListenerState>();
+
+  /// review_prompt uses Hive under the hood to store condition data.
+  /// Keep in mind that these key values are reserved for this package and avoid the same values
+  /// if you are using Hive.
   static const boxKey = 'review_prompt';
   static const installDateKey = 'install_date';
   static const launchCountKey = 'launch_count';
