@@ -51,16 +51,13 @@ class ReviewPromptListener extends StatefulWidget {
   final ReviewPromptWidgetListener listener;
   final Widget child;
 
-  static _ReviewPromptListenerState of(BuildContext context) =>
-      context.findAncestorStateOfType<_ReviewPromptListenerState>();
-
   /// review_prompt uses Hive under the hood to store condition data.
   /// Keep in mind that these key values are reserved for this package and avoid the same values
   /// if you are using Hive.
-  static const boxKey = 'review_prompt';
-  static const installDateKey = 'install_date';
-  static const launchCountKey = 'launch_count';
-  static const didPromptReviewKey = 'did_prompt_review';
+  static const _boxKey = 'review_prompt';
+  static const _installDateKey = 'install_date';
+  static const _launchCountKey = 'launch_count';
+  static const _didPromptReviewKey = 'did_prompt_review';
 
   @override
   _ReviewPromptListenerState createState() => _ReviewPromptListenerState();
@@ -71,42 +68,42 @@ class _ReviewPromptListenerState extends State<ReviewPromptListener> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      if (await shouldPromptReview()) {
-        widget.listener(context, reviewInApp, openStoreListing);
+      if (await _shouldPromptReview()) {
+        widget.listener(context, _reviewInApp, _openStoreListing);
       }
     });
   }
 
-  Future<bool> shouldPromptReview() async {
+  Future<bool> _shouldPromptReview() async {
     if (!await InAppReview.instance.isAvailable()) return false;
     if (widget.listenAlways) return true;
 
     await Hive.initFlutter();
-    final box = await Hive.openBox(ReviewPromptListener.boxKey);
-    final didPromptReview = box.get(ReviewPromptListener.didPromptReviewKey, defaultValue: false);
+    final box = await Hive.openBox(ReviewPromptListener._boxKey);
+    final didPromptReview = box.get(ReviewPromptListener._didPromptReviewKey, defaultValue: false);
     if (didPromptReview) return false;
 
-    final installDate = box.get(ReviewPromptListener.installDateKey, defaultValue: DateTime.now());
-    final launchCount = box.get(ReviewPromptListener.launchCountKey, defaultValue: 1);
-    if (!box.containsKey(ReviewPromptListener.installDateKey)) {
-      box.put(ReviewPromptListener.installDateKey, DateTime.now());
+    final installDate = box.get(ReviewPromptListener._installDateKey, defaultValue: DateTime.now());
+    final launchCount = box.get(ReviewPromptListener._launchCountKey, defaultValue: 1);
+    if (!box.containsKey(ReviewPromptListener._installDateKey)) {
+      box.put(ReviewPromptListener._installDateKey, DateTime.now());
     }
-    box.put(ReviewPromptListener.launchCountKey, launchCount + 1);
+    box.put(ReviewPromptListener._launchCountKey, launchCount + 1);
     final daysSinceInstall = DateTime.now().difference(installDate).inDays;
     final shouldPromptReview = daysSinceInstall >= widget.minDaysSinceInstall && launchCount >= widget.minLaunchCount;
     if (shouldPromptReview) {
-      box.put(ReviewPromptListener.didPromptReviewKey, true);
+      box.put(ReviewPromptListener._didPromptReviewKey, true);
     }
     await Hive.close();
 
     return shouldPromptReview;
   }
 
-  Future<void> reviewInApp() async {
+  Future<void> _reviewInApp() async {
     await InAppReview.instance.requestReview();
   }
 
-  Future<void> openStoreListing() async {
+  Future<void> _openStoreListing() async {
     if (Platform.isIOS || Platform.isMacOS && widget.appStoreId == null) {
       throw ReviewPromptError(message: 'appStoreId is required to open store listing on iOS and MacOS');
     } else if (Platform.isWindows && widget.microsoftStoreId == null) {
