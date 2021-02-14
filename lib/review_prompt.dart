@@ -20,10 +20,12 @@ class ReviewPromptListener extends StatefulWidget {
     this.minLaunchCount = 3,
     this.appStoreId,
     this.microsoftStoreId,
+    this.listenAlways = false,
     @required this.listener,
     @required this.child,
   })  : assert(minDaysSinceInstall != null || minDaysSinceInstall > 0),
         assert(minLaunchCount != null || minLaunchCount > 0),
+        assert(listenAlways != null),
         assert(listener != null),
         assert(child != null),
         super(key: key);
@@ -39,6 +41,10 @@ class ReviewPromptListener extends StatefulWidget {
 
   /// Microsoft ID is required to open store listing on Windows.
   final String microsoftStoreId;
+
+  /// Always call [listener] if true regardless of conditions, set true for development.
+  /// [listener] will not be called if the device is unable to use in-app review even if [listenAlways] is set to true.
+  final bool listenAlways;
 
   /// [listener] will be called when the app start if conditions are met.
   /// [listener] never gets called more than once.
@@ -73,6 +79,7 @@ class _ReviewPromptListenerState extends State<ReviewPromptListener> {
 
   Future<bool> shouldPromptReview() async {
     if (!await InAppReview.instance.isAvailable()) return false;
+    if (widget.listenAlways) return true;
 
     await Hive.initFlutter();
     final box = await Hive.openBox(ReviewPromptListener.boxKey);
